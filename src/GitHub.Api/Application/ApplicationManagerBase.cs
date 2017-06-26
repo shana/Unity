@@ -12,6 +12,7 @@ namespace GitHub.Unity
 
         private IEnvironment environment;
         private RepositoryManager repositoryManager;
+        private IBranchCache branchCache;
 
         public ApplicationManagerBase(SynchronizationContext synchronizationContext)
         {
@@ -23,6 +24,7 @@ namespace GitHub.Unity
             TaskManager = new TaskManager(UIScheduler);
             // accessing Environment triggers environment initialization if it hasn't happened yet
             Platform = new Platform(Environment);
+            CacheManager = new CacheManager();
         }
 
         protected void Initialize()
@@ -39,6 +41,11 @@ namespace GitHub.Unity
             ProcessManager = new ProcessManager(Environment, Platform.GitEnvironment, CancellationToken);
             Platform.Initialize(ProcessManager, TaskManager);
             GitClient = new GitClient(Environment, ProcessManager, Platform.CredentialManager, TaskManager);
+        }
+
+        public void SetupCache(IBranchCache bcache)
+        {
+            branchCache = bcache;
         }
 
         public virtual ITask Run()
@@ -217,15 +224,14 @@ namespace GitHub.Unity
         public CancellationToken CancellationToken { get { return TaskManager.Token; } }
         public ITaskManager TaskManager { get; protected set; }
         public IGitClient GitClient { get; protected set; }
-
+        public ISettings LocalSettings { get; protected set; }
+        public ISettings SystemSettings { get; protected set; }
+        public ISettings UserSettings { get; protected set; }
+        public CacheManager CacheManager { get; private set; }
+        public IUsageTracker UsageTracker { get; protected set; }
 
         protected TaskScheduler UIScheduler { get; private set; }
         protected SynchronizationContext SynchronizationContext { get; private set; }
         protected IRepositoryManager RepositoryManager { get { return repositoryManager; } }
-
-        public ISettings LocalSettings { get; protected set; }
-        public ISettings SystemSettings { get; protected set; }
-        public ISettings UserSettings { get; protected set; }
-        public IUsageTracker UsageTracker { get; protected set; }
     }
 }

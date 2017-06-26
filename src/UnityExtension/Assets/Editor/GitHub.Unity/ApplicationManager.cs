@@ -33,13 +33,11 @@ namespace GitHub.Unity
                 .ThenInUI(_ =>
                 {
                     Logger.Debug("Run");
+
                     Utility.Run();
 
                     ProjectWindowInterface.Initialize(Environment.Repository);
 
-                    var view = Window.GetView();
-                    if (view != null)
-                        view.Initialize(this);
                     return new { Version = Application.unityVersion, FirstRun = ApplicationCache.Instance.FirstRun };
                 })
                 .Then((s, x) => SetupMetrics(x.Version, x.FirstRun))
@@ -81,7 +79,7 @@ namespace GitHub.Unity
                 {
                     Logger.Trace("Restarted {0}", Environment.Repository);
                     ProjectWindowInterface.Initialize(Environment.Repository);
-                    var view = Window.GetView();
+                    var view = Window.GetWindow();
                     if (view != null)
                         view.Initialize(this);
                 });
