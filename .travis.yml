@@ -5,7 +5,7 @@ git:
   submodules: false
   depth: 1
 solution: GitHub.Unity.sln
-before_script:
+install:
   - wget http://ghfvs-installer.github.com/dependencies/deps.zip
   - unzip deps.zip -d lib/
   - ls -lisa lib/
