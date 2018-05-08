@@ -9,6 +9,4 @@ install:
   - wget http://ghfvs-installer.github.com/dependencies/deps.zip
   - unzip deps.zip -d lib/
   - ls -lisa lib/
-  - nuget
-  - nuget sources
-  - nuget restore
+  - mono common/nuget.exe restore
