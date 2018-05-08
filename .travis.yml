@@ -8,4 +8,7 @@ solution: GitHub.Unity.sln
 before_script:
   - wget http://ghfvs-installer.github.com/dependencies/deps.zip
   - unzip -d lib/
+  - ls -lisa lib/
+  - nuget
+  - nuget sources
   - nuget restore
