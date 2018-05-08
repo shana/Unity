@@ -1,0 +1,7 @@
+language: csharp
+mono:
+  - 4.8.0
+solution: GitHub.Unity.sln
+before_script:
+  - wget http://ghfvs-installer.github.com/dependencies/deps.zip
+  - unzip -d lib/
