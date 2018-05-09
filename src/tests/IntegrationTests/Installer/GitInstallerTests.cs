@@ -5,6 +5,7 @@ using FluentAssertions;
 using GitHub.Unity;
 using NSubstitute;
 using NUnit.Framework;
+using System.IO;
 
 namespace IntegrationTests
 {
@@ -115,6 +116,43 @@ namespace IntegrationTests
             var procTask = new SimpleProcessTask(TaskManager.Token, "something")
                 .Configure(ProcessManager);
             procTask.Process.StartInfo.EnvironmentVariables["PATH"].Should().StartWith(gitInstallationPath.ToString());
+        }
+
+        [Test]
+        public void SkipsInstallWhenSettingsGitExists()
+        {
+            DefaultEnvironment.OnMac = true;
+            DefaultEnvironment.OnWindows = false;
+
+            var filesystem = Substitute.For<IFileSystem>();
+            filesystem.FileExists(Arg.Any<string>()).Returns(true);
+            filesystem.DirectoryExists(Arg.Any<string>()).Returns(true);
+            filesystem.DirectorySeparatorChar.Returns('/');
+            Environment.FileSystem = filesystem;
+
+            var gitInstallationPath = "/usr/local".ToNPath();
+            var gitExecutablePath = "/usr/local/bin/git".ToNPath();
+            var gitLfsInstallationPath = "/usr/local".ToNPath();
+            var gitLfsExecutablePath = "/usr/local/bin/git-lfs".ToNPath();
+
+            var installDetails = new GitInstaller.GitInstallDetails(gitInstallationPath, Environment.IsWindows)
+                {
+                    GitPackageFeed = $"http://localhost:{server.Port}/unity/git/mac/{GitInstaller.GitInstallDetails.GitPackageName}",
+                    GitLfsPackageFeed = $"http://localhost:{server.Port}/unity/git/mac/{GitInstaller.GitInstallDetails.GitLfsPackageName}",
+                };
+
+            filesystem.GetFiles(Arg.Any<string>(), Arg.Is<string>(installDetails.GitLfsExecutable), Arg.Any<SearchOption>())
+                .Returns(new string[] { gitLfsExecutablePath });
+
+
+            var settings = Substitute.For<ISettings>();
+            settings.Get(Arg.Is<string>(Constants.GitInstallPathKey), Arg.Any<string>()).Returns(gitExecutablePath);
+            var installer = new GitInstaller(Environment, ProcessManager, TaskManager, settings, installDetails);
+            var result = installer.SetupGitIfNeeded();
+            Assert.AreEqual(gitInstallationPath, result.GitInstallationPath);
+            Assert.AreEqual(gitLfsInstallationPath, result.GitLfsInstallationPath);
+            Assert.AreEqual(gitExecutablePath, result.GitExecutablePath);
+            Assert.AreEqual(gitLfsExecutablePath, result.GitLfsExecutablePath);
         }
     }
 }

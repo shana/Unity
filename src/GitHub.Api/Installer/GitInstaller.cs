@@ -2,6 +2,7 @@
 using System.Threading;
 using GitHub.Logging;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace GitHub.Unity
 {
@@ -35,34 +36,11 @@ namespace GitHub.Unity
         {
             //Logger.Trace("SetupGitIfNeeded");
             var state = new GitInstallationState();
-
-            if (systemSettings != null)
-            {
-                NPath? gitExecutablePath = systemSettings.Get(Constants.GitInstallPathKey)?.ToNPath();
-                if (gitExecutablePath.HasValue && gitExecutablePath.Value.FileExists()) // we have a git path
-                {
-                    Logger.Trace("Using git install path from settings: {0}", gitExecutablePath);
-                    state.GitExecutablePath = gitExecutablePath.Value;
-                    state.GitIsValid = true;
-
-                    var findTask = new FindExecTask("git-lfs", cancellationToken).Configure(processManager, dontSetupGit: true).Catch(e => true);
-                    var gitLfsPath = findTask.RunWithReturn(true);
-                    state.GitLfsIsValid = findTask.Successful;
-                    if (state.GitLfsIsValid)
-                    {
-                        // we should doublecheck that system git is usable here
-                        state.GitLfsExecutablePath = gitLfsPath;
-                        state.GitLfsInstallationPath = gitLfsPath.Resolve().Parent.Parent;
-                    }
-
-                    if (state.GitIsValid && state.GitLfsIsValid)
-                        return state;
-                }
-            }
+            state = VerifyGitFromSettings(state);
 
             if (!environment.IsWindows)
             {
-                return VerifyMacGit(state);
+                return LocateMacGit(state);
             }
 
             state = VerifyPortableGitInstallation(state);
@@ -76,25 +54,55 @@ namespace GitHub.Unity
             return state;
         }
 
-        private GitInstallationState VerifyMacGit(GitInstallationState state)
+        private GitInstallationState VerifyGitFromSettings(GitInstallationState state)
         {
-            var findTask = new FindExecTask("git", cancellationToken).Configure(processManager, dontSetupGit: true).Catch(e => true);
-            var gitPath = findTask.RunWithReturn(true);
-            state.GitIsValid = findTask.Successful;
-            if (state.GitIsValid)
-            {
-                state.GitExecutablePath = gitPath;
-                state.GitInstallationPath = gitPath.Resolve().Parent.Parent;
-            }
+            if (systemSettings == null)
+                return state;
 
-            findTask = new FindExecTask("git-lfs", cancellationToken).Configure(processManager, dontSetupGit: true).Catch(e => true);
-            var gitLfsPath = findTask.RunWithReturn(true);
-            state.GitLfsIsValid = findTask.Successful;
+            NPath gitExecutablePath = systemSettings.Get(Constants.GitInstallPathKey).ToNPath();
+            if (!gitExecutablePath.IsInitialized|| !gitExecutablePath.FileExists())
+                return state;
+
+            Logger.Trace("Using git install path from settings: {0}", gitExecutablePath);
+            state.GitExecutablePath = gitExecutablePath;
+            state.GitInstallationPath = state.GitExecutablePath.Parent.Parent;
+            state.GitIsValid = true;
+            NPath gitLfsPath = ProcessManager.FindExecutableInPath(installDetails.GitLfsExecutable, true, state.GitInstallationPath);
+            state.GitLfsIsValid = gitLfsPath.IsInitialized;
             if (state.GitLfsIsValid)
             {
                 // we should doublecheck that system git is usable here
                 state.GitLfsExecutablePath = gitLfsPath;
-                state.GitLfsInstallationPath = gitLfsPath.Resolve().Parent.Parent;
+                state.GitLfsInstallationPath = gitLfsPath.Parent.Parent;
+            }
+            return state;
+        }
+
+        private GitInstallationState LocateMacGit(GitInstallationState state)
+        {
+            if (!state.GitIsValid)
+            {
+                var findTask = new FindExecTask("git", cancellationToken).Configure(processManager, dontSetupGit: true).Catch(e => true);
+                var gitPath = findTask.RunWithReturn(true);
+                state.GitIsValid = findTask.Successful;
+                if (state.GitIsValid)
+                {
+                    state.GitExecutablePath = gitPath;
+                    state.GitInstallationPath = gitPath.Parent.Parent;
+                }
+            }
+
+            if (!state.GitLfsIsValid)
+            {
+                var findTask = new FindExecTask("git-lfs", cancellationToken).Configure(processManager, dontSetupGit: true).Catch(e => true);
+                var gitLfsPath = findTask.RunWithReturn(true);
+                state.GitLfsIsValid = findTask.Successful;
+                if (state.GitLfsIsValid)
+                {
+                    // we should doublecheck that system git is usable here
+                    state.GitLfsExecutablePath = gitLfsPath;
+                    state.GitLfsInstallationPath = gitLfsPath.Parent.Parent;
+                }
             }
             return state;
         }
