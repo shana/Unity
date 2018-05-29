@@ -493,7 +493,7 @@ namespace GitHub.Unity
 
     class FirstNonNullLineProcessTask : ProcessTask<string>
     {
-        private readonly NPath fullPathToExecutable;
+        private readonly NPath? fullPathToExecutable;
         private readonly string arguments;
 
         public FirstNonNullLineProcessTask(CancellationToken token, NPath fullPathToExecutable, string arguments)
@@ -503,7 +503,13 @@ namespace GitHub.Unity
             this.arguments = arguments;
         }
 
-        public override string ProcessName => fullPathToExecutable.FileName;
+        public FirstNonNullLineProcessTask(CancellationToken token, string arguments)
+            : base(token, new FirstNonNullLineOutputProcessor())
+        {
+            this.arguments = arguments;
+        }
+
+        public override string ProcessName => fullPathToExecutable?.FileName;
         public override string ProcessArguments => arguments;
     }
 
