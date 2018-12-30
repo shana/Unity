@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>GitHub.Logging</id>
+    <version>1.2.0</version>
+    <title>GitHub.Logging</title>
+    <authors>-</authors>
+    <owners></owners>
+    <licenseUrl>https://raw.githubusercontent.com/github-for-unity/Unity/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/github-for-unity/Unity</projectUrl>
+    <iconUrl>https://media.githubusercontent.com/media/github-for-unity/Unity/master/unity/PackageProject/preview.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>-</description>
+    <releaseNotes></releaseNotes>
+    <copyright>Copyright 2016-2018</copyright>
+    <tags></tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\GitHub.Logging.dll" target="lib\net35" />
+  </files>
+</package>
